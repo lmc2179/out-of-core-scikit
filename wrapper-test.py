@@ -17,5 +17,9 @@ class CSVAccessTest(unittest.TestCase):
         test_file = 'test_data/test.csv'
         acc = data_access.CSVAccess(batch_size=2000)
         i,o=acc.read(test_file, ['A','B'] ,'D')
-        print(list(i))
-        print(list(o))
+        print(i,o)
+        import sys
+        print(sys.getsizeof(i))
+        print([list(el) for el in list(i)[0]])
+        print([list(element) for element in o])
+        i=acc.read(test_file, ['A','B'])

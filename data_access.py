@@ -38,20 +38,24 @@ class CSVAccess(AbstractDataAccess):
         return input_batches, output_batches
 
     def _extract_vectors(self, row_iter, input_fields, output_field):
-        input_iter = ([row[f] for f in input_fields] for row in row_iter)
         if not output_field:
-            return input_iter
-        output_iter = (row[output_field] for row in row_iter)
-        return input_iter, output_iter
+            input_iter = ([row[f] for f in input_fields] for row in row_iter)
+            return input_iter, None
+        combined_iter = (([row[f] for f in input_fields],row[output_field]) for row in row_iter) # Something strange happens here
+        input_data, output_data = zip(*combined_iter) # Unzip operation;
+        return iter(input_data), iter(output_data)
 
     def _make_batches_from_iter(self, iterator, batch_size):
+        count = 0
         buffer = []
-        try:
-            while True:
-                if(len(buffer) > batch_size):
-                    yield buffer
-                    buffer = []
-                else:
-                    buffer.append(next(iterator))
-        except StopIteration:
-            yield buffer
+        batches = []
+        for element in iterator:
+            if count < batch_size:
+                count += 1
+                buffer.append(element)
+            else:
+                count = 0
+                batches.append(iter(buffer))
+                buffer = []
+        batches.append(iter(buffer))
+        return batches
