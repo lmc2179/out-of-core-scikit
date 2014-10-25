@@ -1,0 +1,1 @@
+A utility for doing out-of-core learning with scikit-learn. 
