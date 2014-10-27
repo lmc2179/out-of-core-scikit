@@ -6,12 +6,20 @@ class OOCWrapper(object):
         self.model = model_type()
         self.input_fields = input_fields
         self.output_field = output_field
-        self.data_access_map = {'test':data_access.TestDataAccess}
+        self.data_access_map = {'test':data_access.TestDataAccess, 'csv':data_access.CSVAccess}
 
     def fit(self, data_source, data_type, iterations=1):
         for i in range(iterations):
             input_batches, output_batches = self._get_batches(data_source, data_type, self.input_fields, self.output_field)
-            [self.model.partial_fit(i,o) for i,o in zip(input_batches, output_batches)]
+            [self.model.partial_fit(self._unpack_input_batch(i),self._unpack_output_batch(o)) for i,o in zip(input_batches, output_batches)]
+
+    def _unpack_input_batch(self, batch):
+        batch = [list(el) for el in list(batch)]
+        return batch
+
+    def _unpack_output_batch(self, batch):
+        batch = [element for element in batch]
+        return batch
 
     def _get_batches(self, data_source, data_type, input_fields, output_field=None):
         accessor = self.data_access_map[data_type]()

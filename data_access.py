@@ -24,7 +24,7 @@ class TestDataAccess(object):
             print(o)
 
 class CSVAccess(AbstractDataAccess):
-    def __init__(self, batch_size):
+    def __init__(self, batch_size=2000):
         self.batch_size = batch_size
 
     def read(self, filename, input_fields, output_field=None):
