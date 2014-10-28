@@ -8,9 +8,9 @@ class OOCWrapper(object):
         self.output_field = output_field
         self.data_access_map = {'test':data_access.TestDataAccess, 'csv':data_access.CSVAccess}
 
-    def fit(self, data_source, data_type, iterations=1):
+    def fit(self, data_type, data_source_dict, iterations=1):
         for i in range(iterations):
-            input_batches, output_batches = self._get_batches(data_source, data_type, self.input_fields, self.output_field)
+            input_batches, output_batches = self._get_batches(data_source_dict, data_type, self.input_fields, self.output_field)
             [self.model.partial_fit(self._unpack_input_batch(i),self._unpack_output_batch(o)) for i,o in zip(input_batches, output_batches)]
 
     def _unpack_input_batch(self, batch):
@@ -26,10 +26,10 @@ class OOCWrapper(object):
         batches = accessor.read(data_source, input_fields, output_field=output_field)
         return batches
 
-    def predict(self, data_source, data_type, target_file, target_type):
-        input_batches = self._get_batches(data_source, data_type, self.input_fields)
+    def predict(self, data_type, data_source_dict, target_type, target_data_dict):
+        input_batches = self._get_batches(data_source_dict, data_type, self.input_fields)
         output_batches = self._predict_batches(input_batches)
-        self._write_predictions(target_file, target_type, output_batches)
+        self._write_predictions(target_data_dict, target_type, output_batches)
 
     def _predict_batches(self, input_batches):
         return (self.model.predict(i) for i in input_batches)

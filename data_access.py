@@ -1,13 +1,15 @@
-import itertools
 import csv
+import sqlite3
+import os
 
 class AbstractDataAccess(object):
-    def read(self, data_source, input_fields, output_field=None):
+    def read(self, data_source_dict, input_fields, output_field=None):
         raise NotImplementedError
 
-    def write(self, output_batches, target_file):
+    def write(self, output_batches, target_dict):
         raise NotImplementedError
 
+# TODO: These two classes are scaffolding; they will be removed when the SQLite code is ready.
 class TestDataAccess(object):
     def read(self, data_source, input_fields, output_field=None):
         test_data = {'A':[1,2,3,4], 'B':[0,0,0,0], 'C':[7,7,7,7], 'D':[1,2,3,4]}
@@ -59,3 +61,36 @@ class CSVAccess(AbstractDataAccess):
                 buffer = []
         batches.append(iter(buffer))
         return batches
+
+class SQLiteAccess(AbstractDataAccess):
+    def __init__(self, batch_size=2000):
+        self.batch_size = batch_size
+        self.DB_PATH = 'db_path'
+        self.DB_NAME = 'db_name'
+        self.TABLE_NAME = 'table'
+
+    def read(self, data_source_dict, input_fields, output_field=None):
+        "Takes location of the form [DB_NAME].[TABLE_NAME] and returns iterator over batches."
+        self._validate(data_source_dict)
+        if not output_field:
+            return self._get_batch_stream(data_source_dict, input_fields)
+        return self._get_batch_stream(data_source_dict, input_fields), self._get_batch_stream(data_source_dict, [output_field])
+
+    def _validate(self, data_source_dict):
+        missing_fields = [field for field in [self.DB_PATH, self.DB_NAME, self.TABLE_NAME] if field not in data_source_dict]
+        if not missing_fields:
+            return
+        raise Exception('Missing fields from data source: {0}'.format(', '.join(missing_fields)))
+
+    def _get_batch_stream(self, data_source_dict, fieldnames):
+        full_db_path = os.path.join(data_source_dict[self.DB_PATH], data_source_dict[self.DB_NAME])
+        sql = self._build_sql_select(data_source_dict[self.TABLE_NAME], fieldnames)
+        with sqlite3.connect(full_db_path) as conn:
+            cursor = conn.cursor()
+            cursor.execute(sql)
+            results = cursor.fetchall()[1:] # TODO: Add correct batching
+            return results
+
+    def _build_sql_select(self, table_name, fields):
+        query = 'SELECT {0} FROM {1};'.format(','.join(fields), table_name)
+        return query
