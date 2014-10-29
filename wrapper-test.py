@@ -19,8 +19,14 @@ class SQLiteAccessTest(unittest.TestCase):
         assert [list(el) for el in list(i)[0]] == [[1, 0], [2, 0], [3, 0], [4, 0]]
 
     def test_end_to_end(self):
-        print('Running end to end testing with CSV datasource...')
+        print('Running end to end testing with SQLite datasource...')
         wrap=ooc_wrapper.OOCWrapper(model_type=linear_model.SGDRegressor, input_fields=['A','B'], output_field='D')
-        wrap.fit('csv', 'test_data/test.csv', iterations=10000)
+        training_source_dict = {'db_path':'/home/louis/Code/out-of-core-scikit/test_data',
+                          'db_name': 'testdb',
+                          'table': 'test_small'}
+        test_data_dict = {'db_path':'/home/louis/Code/out-of-core-scikit/test_data',
+                          'db_name': 'testdb',
+                          'table': 'test_results'}
+        wrap.fit('sqlite', training_source_dict, iterations=10000)
         print('Expecting [1, 2]; [3, 4]')
-        wrap.predict('test', None, 'test', None)
+        wrap.predict('sqlite', training_source_dict, 'sqlite', test_data_dict)
