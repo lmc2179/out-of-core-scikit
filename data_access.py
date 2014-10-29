@@ -60,3 +60,10 @@ class SQLiteAccess(AbstractDataAccess):
     def _build_sql_select(self, table_name, fields):
         query = 'SELECT {0} FROM {1};'.format(','.join(fields), table_name)
         return query
+
+    def write(self, output_batches, target_dict):
+        self._validate(target_dict)
+        [self._write_batch_stream(batch) for batch in output_batches]
+
+    def _write_batch_stream(self, batch):
+        print(list(batch))

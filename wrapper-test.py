@@ -14,7 +14,7 @@ class SQLiteAccessTest(unittest.TestCase):
         i,o=acc.read(db_source_dict, ['A','B'] ,'D')
         print('Size of input iterator is ',format(sys.getsizeof(i)))
         assert [list(el) for el in list(i)[0]] == [[1, 0], [2, 0], [3, 0], [4, 0]]
-        assert [list(element) for element in o] == [[1, 2, 3, 4]] # This test fails; not sure at what level to do the unpacking
+        assert [list(element) for element in o] == [[1, 2, 3, 4]]
         i=acc.read(db_source_dict, ['A','B'])
         assert [list(el) for el in list(i)[0]] == [[1, 0], [2, 0], [3, 0], [4, 0]]
 
@@ -28,5 +28,4 @@ class SQLiteAccessTest(unittest.TestCase):
                           'db_name': 'testdb',
                           'table': 'test_results'}
         wrap.fit('sqlite', training_source_dict, iterations=10000)
-        print('Expecting [1, 2]; [3, 4]')
         wrap.predict('sqlite', training_source_dict, 'sqlite', test_data_dict)

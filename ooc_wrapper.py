@@ -6,7 +6,7 @@ class OOCWrapper(object):
         self.model = model_type()
         self.input_fields = input_fields
         self.output_field = output_field
-        self.data_access_map = {'test':data_access.TestDataAccess, 'csv':data_access.CSVAccess}
+        self.data_access_map = {'sqlite': data_access.SQLiteAccess}
 
     def fit(self, data_type, data_source_dict, iterations=1):
         for i in range(iterations):
@@ -32,7 +32,7 @@ class OOCWrapper(object):
         self._write_predictions(target_data_dict, target_type, output_batches)
 
     def _predict_batches(self, input_batches):
-        return (self.model.predict(i) for i in input_batches)
+        return (self.model.predict(list(i)) for i in input_batches)
 
     def _write_predictions(self, target_file, target_type, output_batches):
         accessor = self.data_access_map[target_type]()
