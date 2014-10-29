@@ -9,6 +9,22 @@ class AbstractDataAccess(object):
     def write(self, output_batches, target_dict):
         raise NotImplementedError
 
+    def _make_batches_from_iter(self, iterator, batch_size):
+        # Utility method - this comes in handy pretty often.
+        count = 0
+        buffer = []
+        batches = []
+        for element in iterator:
+            if count < batch_size:
+                count += 1
+                buffer.append(element)
+            else:
+                count = 0
+                batches.append(iter(buffer))
+                buffer = []
+        batches.append(iter(buffer))
+        return batches
+
 # TODO: These two classes are scaffolding; they will be removed when the SQLite code is ready.
 class TestDataAccess(object):
     def read(self, data_source, input_fields, output_field=None):
@@ -47,21 +63,6 @@ class CSVAccess(AbstractDataAccess):
         input_data, output_data = zip(*combined_iter) # Unzip operation;
         return iter(input_data), iter(output_data)
 
-    def _make_batches_from_iter(self, iterator, batch_size):
-        count = 0
-        buffer = []
-        batches = []
-        for element in iterator:
-            if count < batch_size:
-                count += 1
-                buffer.append(element)
-            else:
-                count = 0
-                batches.append(iter(buffer))
-                buffer = []
-        batches.append(iter(buffer))
-        return batches
-
 class SQLiteAccess(AbstractDataAccess):
     def __init__(self, batch_size=2000):
         self.batch_size = batch_size
@@ -88,8 +89,11 @@ class SQLiteAccess(AbstractDataAccess):
         with sqlite3.connect(full_db_path) as conn:
             cursor = conn.cursor()
             cursor.execute(sql)
-            results = cursor.fetchall()[1:] # TODO: Add correct batching
-            return results
+            column_names = next(cursor)
+            if len(fieldnames) > 1:
+                return self._make_batches_from_iter(cursor, self.batch_size)
+            else: # If there is only a single row, we unwrap it
+                return self._make_batches_from_iter((record[0] for record in cursor), self.batch_size)
 
     def _build_sql_select(self, table_name, fields):
         query = 'SELECT {0} FROM {1};'.format(','.join(fields), table_name)
