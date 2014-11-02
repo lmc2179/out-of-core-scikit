@@ -23,8 +23,11 @@ class OOCWrapper(object):
 
     def _get_batches(self, data_source, data_type, input_fields, output_field=None):
         accessor = self.data_access_map[data_type]()
-        batches = accessor.read(data_source, input_fields, output_field=output_field)
-        return batches
+        if output_field:
+            io_dict = accessor.read(data_source, inputs=input_fields, output=output_field)
+            return io_dict['inputs'], io_dict['output']
+        else:
+            return accessor.read(data_source, inputs=input_fields)['inputs']
 
     def predict(self, data_type, data_source_dict, target_type, target_data_dict):
         input_batches = self._get_batches(data_source_dict, data_type, self.input_fields)
