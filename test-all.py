@@ -11,7 +11,7 @@ class SQLiteAccessTest(unittest.TestCase):
                           'db_name': 'testdb',
                           'table': 'test_small'}
         acc = data_access.SQLiteAccess(batch_size=2000)
-        i_o_dict=acc.read(db_source_dict, inputs=['A','B'] ,outputs='D')
+        i_o_dict=acc.read(db_source_dict, inputs=['A','B'] ,outputs=['D'])
         i,o = i_o_dict['inputs'], i_o_dict['outputs']
         print('Size of input iterator is ',format(sys.getsizeof(i)))
         assert [list(el) for el in list(i)[0]] == [[1, 0], [2, 0], [3, 0], [4, 0]]
@@ -25,9 +25,11 @@ class SQLiteAccessTest(unittest.TestCase):
         wrap=ooc_wrapper.OOCWrapper(model_type=linear_model.SGDRegressor, input_fields=['A','B'], output_field='D')
         training_source_dict = {'db_path':'/home/louis/Code/out-of-core-scikit/test_data',
                           'db_name': 'testdb',
-                          'table': 'test_small'}
+                          'table': 'test_small',
+                          'pk_column':'ID'}
         test_data_dict = {'db_path':'/home/louis/Code/out-of-core-scikit/test_data',
                           'db_name': 'testdb',
-                          'table': 'test_results'}
+                          'table': 'test_results',
+                          'pk_column':'ID'}
         wrap.fit('sqlite', training_source_dict, iterations=10000)
         wrap.predict('sqlite', training_source_dict, 'sqlite', test_data_dict)

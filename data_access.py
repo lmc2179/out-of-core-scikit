@@ -69,7 +69,7 @@ class SQLiteAccess(AbstractDataAccess):
         with sqlite3.connect(full_db_path) as conn:
             cursor = conn.cursor()
             cursor.execute(sql)
-            column_names = next(cursor)
+            column_names = fieldnames
             stream_names = kwargs.keys()
             stream_columns = kwargs.values()
             extractor_functions = self._build_extractors(column_names, stream_names, stream_columns) # Same ordering as stream_*

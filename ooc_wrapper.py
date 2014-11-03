@@ -36,13 +36,15 @@ class OOCWrapper(object):
     def predict(self, data_type, data_source_dict, target_type, target_data_dict):
         self._validate(data_source_dict, data_access.FIELDS_REQUIRED_FOR_TESTING_READ)
         self._validate(target_data_dict, data_access.FIELDS_REQUIRED_FOR_TESTING_WRITE)
-        input_batches = self._get_test_batches(data_source_dict, data_type, self.input_fields)
+        pk_batches, input_batches = self._get_test_batches(data_source_dict, data_type, self.input_fields)
         output_batches = self._predict_batches(input_batches)
         self._write_predictions(target_data_dict, target_type, output_batches)
 
     def _get_test_batches(self, data_source, data_type, input_fields):
         accessor = self.data_access_map[data_type]()
-        return accessor.read(data_source, inputs=input_fields)['inputs']
+        pk_field = data_source[data_access.PK_COLUMN]
+        data_dict = accessor.read(data_source, inputs=input_fields, primary_key=[pk_field])
+        return data_dict['primary_key'], data_dict['inputs']
 
     def _predict_batches(self, input_batches):
         return (self.model.predict(list(i)) for i in input_batches)
