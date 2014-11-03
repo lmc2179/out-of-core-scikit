@@ -2,6 +2,15 @@ import itertools
 import sqlite3
 import os
 
+#### Constants used by this module and ooc-wrapper
+DB_PATH = 'db_path'
+DB_NAME = 'db_name'
+TABLE_NAME = 'table'
+PK_COLUMN = 'pk_column'
+FIELDS_REQUIRED_FOR_TRAINING_READ = [DB_PATH, DB_NAME, TABLE_NAME]
+FIELDS_REQUIRED_FOR_TESTING_READ = [DB_PATH, DB_NAME, TABLE_NAME]
+FIELDS_REQUIRED_FOR_TESTING_WRITE = [DB_PATH, DB_NAME, TABLE_NAME]
+
 class AbstractDataAccess(object):
     def read(self, data_source_dict, **kwargs):
         raise NotImplementedError
@@ -28,10 +37,6 @@ class AbstractDataAccess(object):
 class SQLiteAccess(AbstractDataAccess):
     def __init__(self, batch_size=2000):
         self.batch_size = batch_size
-        self.DB_PATH = 'db_path'
-        self.DB_NAME = 'db_name'
-        self.TABLE_NAME = 'table'
-        self.PK_COLUMN = 'pk_column'
 
     def read(self, data_source_dict, **kwargs):
         "Takes location of the form [DB_NAME].[TABLE_NAME] and returns iterator over batches."
@@ -39,14 +44,14 @@ class SQLiteAccess(AbstractDataAccess):
         return self._get_batch_streams(data_source_dict, **kwargs)
 
     def _validate(self, data_source_dict):
-        missing_fields = [field for field in [self.DB_PATH, self.DB_NAME, self.TABLE_NAME] if field not in data_source_dict]
+        missing_fields = [field for field in [DB_PATH, DB_NAME, TABLE_NAME] if field not in data_source_dict]
         if not missing_fields:
             return
         raise Exception('Missing fields from data source: {0}'.format(', '.join(missing_fields)))
 
     def _get_batch_stream(self, data_source_dict, fieldnames):
-        full_db_path = os.path.join(data_source_dict[self.DB_PATH], data_source_dict[self.DB_NAME])
-        sql = self._build_sql_select(data_source_dict[self.TABLE_NAME], fieldnames)
+        full_db_path = os.path.join(data_source_dict[DB_PATH], data_source_dict[DB_NAME])
+        sql = self._build_sql_select(data_source_dict[TABLE_NAME], fieldnames)
         with sqlite3.connect(full_db_path) as conn:
             cursor = conn.cursor()
             cursor.execute(sql)
@@ -57,9 +62,9 @@ class SQLiteAccess(AbstractDataAccess):
                 return self._make_batches_from_iter((record[0] for record in cursor), self.batch_size)
 
     def _get_batch_streams(self, data_source_dict, **kwargs):
-        full_db_path = os.path.join(data_source_dict[self.DB_PATH], data_source_dict[self.DB_NAME])
+        full_db_path = os.path.join(data_source_dict[DB_PATH], data_source_dict[DB_NAME])
         fieldnames = self._flatten_list(kwargs.values())
-        sql = self._build_sql_select(data_source_dict[self.TABLE_NAME], fieldnames)
+        sql = self._build_sql_select(data_source_dict[TABLE_NAME], fieldnames)
         # I apologize deeply for the following block of code.
         with sqlite3.connect(full_db_path) as conn:
             cursor = conn.cursor()

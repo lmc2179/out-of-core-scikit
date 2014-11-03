@@ -8,7 +8,14 @@ class OOCWrapper(object):
         self.output_field = output_field
         self.data_access_map = {'sqlite': data_access.SQLiteAccess}
 
+    def _validate(self, data_source_dict, required_fields):
+        missing_fields = [field for field in required_fields if field not in data_source_dict]
+        if not missing_fields:
+            return
+        raise Exception('Missing fields from data dictionary: {0}'.format(', '.join(missing_fields)))
+
     def fit(self, data_type, data_source_dict, iterations=1):
+        self._validate(data_source_dict, data_access.FIELDS_REQUIRED_FOR_TRAINING_READ)
         for i in range(iterations):
             input_batches, output_batches = self._get_training_batches(data_source_dict, data_type, self.input_fields, self.output_field)
             [self.model.partial_fit(self._unpack_input_batch(i),self._unpack_output_batch(o)) for i,o in zip(input_batches, output_batches)]
@@ -27,6 +34,8 @@ class OOCWrapper(object):
         return io_dict['inputs'], io_dict['output']
 
     def predict(self, data_type, data_source_dict, target_type, target_data_dict):
+        self._validate(data_source_dict, data_access.FIELDS_REQUIRED_FOR_TESTING_READ)
+        self._validate(target_data_dict, data_access.FIELDS_REQUIRED_FOR_TESTING_WRITE)
         input_batches = self._get_test_batches(data_source_dict, data_type, self.input_fields)
         output_batches = self._predict_batches(input_batches)
         self._write_predictions(target_data_dict, target_type, output_batches)
