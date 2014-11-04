@@ -38,7 +38,7 @@ class OOCWrapper(object):
         self._validate(target_data_dict, data_access.FIELDS_REQUIRED_FOR_TESTING_WRITE)
         pk_batches, input_batches = self._get_test_batches(data_source_dict, data_type, self.input_fields)
         output_batches = self._predict_batches(input_batches)
-        self._write_predictions(target_data_dict, target_type, output_batches)
+        self._write_predictions(target_data_dict, target_type, output_batches, pk_batches)
 
     def _get_test_batches(self, data_source, data_type, input_fields):
         accessor = self.data_access_map[data_type]()
@@ -49,6 +49,6 @@ class OOCWrapper(object):
     def _predict_batches(self, input_batches):
         return (self.model.predict(list(i)) for i in input_batches)
 
-    def _write_predictions(self, target_file, target_type, output_batches):
+    def _write_predictions(self, target_file, target_type, output_batches, primary_keys):
         accessor = self.data_access_map[target_type]()
-        accessor.write(output_batches, target_file)
+        accessor.write(primary_keys, output_batches, target_file)

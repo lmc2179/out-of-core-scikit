@@ -15,7 +15,7 @@ class AbstractDataAccess(object):
     def read(self, data_source_dict, **kwargs):
         raise NotImplementedError
 
-    def write(self, output_batches, target_dict):
+    def write(self, primary_keys, output_batches, target_dict):
         raise NotImplementedError
 
     def _make_batches_from_iter(self, iterator, batch_size):
@@ -111,9 +111,9 @@ class SQLiteAccess(AbstractDataAccess):
         query = 'SELECT {0} FROM {1};'.format(','.join(fields), table_name)
         return query
 
-    def write(self, output_batches, target_dict):
+    def write(self, primary_keys, output_batches, target_dict):
         self._validate(target_dict)
-        [self._write_batch_stream(batch) for batch in output_batches]
+        [self._write_batch_stream(primary_keys, batch) for primary_keys, batch in zip(primary_keys,output_batches)]
 
-    def _write_batch_stream(self, batch):
-        print(list(batch))
+    def _write_batch_stream(self, pk_batch, batch):
+        print(list(zip(pk_batch, batch)))
