@@ -30,6 +30,8 @@ class SQLiteAccessTest(unittest.TestCase):
         test_data_dict = {'db_path':'/home/louis/Code/out-of-core-scikit/test_data',
                           'db_name': 'testdb',
                           'table': 'test_results',
-                          'pk_column':'ID'}
+                          'pk_column':'ID',
+                          'label':'TEST',
+                          'label_column':'TIMESTAMP'}
         wrap.fit('sqlite', training_source_dict, iterations=10000)
         wrap.predict('sqlite', training_source_dict, 'sqlite', test_data_dict)

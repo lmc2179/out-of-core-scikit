@@ -51,4 +51,4 @@ class OOCWrapper(object):
 
     def _write_predictions(self, target_file, target_type, output_batches, primary_keys):
         accessor = self.data_access_map[target_type]()
-        accessor.write(primary_keys, output_batches, target_file)
+        accessor.write(primary_keys, output_batches, target_file, self.output_field)

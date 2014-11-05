@@ -7,15 +7,17 @@ DB_PATH = 'db_path'
 DB_NAME = 'db_name'
 TABLE_NAME = 'table'
 PK_COLUMN = 'pk_column'
+LABEL = 'label'
+LABEL_COLUMN = 'label_column'
 FIELDS_REQUIRED_FOR_TRAINING_READ = [DB_PATH, DB_NAME, TABLE_NAME]
 FIELDS_REQUIRED_FOR_TESTING_READ = [DB_PATH, DB_NAME, TABLE_NAME, PK_COLUMN]
-FIELDS_REQUIRED_FOR_TESTING_WRITE = [DB_PATH, DB_NAME, TABLE_NAME, PK_COLUMN]
+FIELDS_REQUIRED_FOR_TESTING_WRITE = [DB_PATH, DB_NAME, TABLE_NAME, PK_COLUMN, LABEL, LABEL_COLUMN]
 
 class AbstractDataAccess(object):
     def read(self, data_source_dict, **kwargs):
         raise NotImplementedError
 
-    def write(self, primary_keys, output_batches, target_dict):
+    def write(self, primary_keys, output_batches, target_dict, output_field):
         raise NotImplementedError
 
     def _make_batches_from_iter(self, iterator, batch_size):
@@ -111,9 +113,22 @@ class SQLiteAccess(AbstractDataAccess):
         query = 'SELECT {0} FROM {1};'.format(','.join(fields), table_name)
         return query
 
-    def write(self, primary_keys, output_batches, target_dict):
+    def write(self, primary_keys, output_batches, target_dict, output_field):
         self._validate(target_dict)
-        [self._write_batch_stream(primary_keys, batch) for primary_keys, batch in zip(primary_keys,output_batches)]
+        # Implement output column or kwargs approach like above
+        full_db_path = os.path.join(target_dict[DB_PATH], target_dict[DB_NAME])
+        with sqlite3.connect(full_db_path) as conn:
+            cursor = conn.cursor()
+            batch_sqls = (self._get_batch_write_sql(pk_batch, batch, target_dict, output_field) for pk_batch, batch in zip(primary_keys, output_batches))
+            for sql_batch in batch_sqls:
+                [cursor.execute(sql) for sql in sql_batch]
 
-    def _write_batch_stream(self, pk_batch, batch):
-        print(list(zip(pk_batch, batch)))
+    def _get_batch_write_sql(self, pk_batch, batch, target_dict, output_field):
+        query = """INSERT INTO
+                {table} ({output_field}, {pk_field}, {label_field})
+                VALUES ({output_value}, {pk}, '{label}');
+                """
+        return [query.format(table=target_dict[TABLE_NAME], output_field=output_field, pk_field=target_dict[PK_COLUMN], label_field=target_dict[LABEL_COLUMN],
+                           output_value=value, pk=pk, label=target_dict[LABEL]) for pk,value in zip(pk_batch, batch)]
+
+
