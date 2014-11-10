@@ -13,6 +13,31 @@ FIELDS_REQUIRED_FOR_TRAINING_READ = [DB_PATH, DB_NAME, TABLE_NAME]
 FIELDS_REQUIRED_FOR_TESTING_READ = [DB_PATH, DB_NAME, TABLE_NAME, PK_COLUMN]
 FIELDS_REQUIRED_FOR_TESTING_WRITE = [DB_PATH, DB_NAME, TABLE_NAME, PK_COLUMN, LABEL, LABEL_COLUMN]
 
+class DataStream(object):
+    "A object which formalizes the process of creating and unpacking batch iterators."
+    def __init__(self, batch_size, iterator):
+        self.batch_size = batch_size
+        self.iterator = iterator
+
+    def batches(self):
+        return (list(batch) for batch in self._make_batches_from_iter(self.iterator, self.batch_size))
+
+    def _make_batches_from_iter(self, iterator, batch_size):
+        count = 0
+        buffer = []
+        batches = []
+        for element in iterator:
+            if count < batch_size:
+                count += 1
+                buffer.append(element)
+            else:
+                count = 1
+                batches.append(iter(buffer))
+                buffer = [element]
+        batches.append(iter(buffer))
+        return batches
+
+
 class AbstractDataAccess(object):
     def read(self, data_source_dict, **kwargs):
         raise NotImplementedError
